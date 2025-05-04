@@ -26,6 +26,8 @@ namespace ClassProject {
         BDD_ID ite(BDD_ID f, BDD_ID g, BDD_ID h) override;
         BDD_ID coFactorTrue(BDD_ID f, BDD_ID x = 0) override;
         BDD_ID coFactorFalse(BDD_ID f, BDD_ID x = 0) override;
+        BDD_ID coFactorTrue(BDD_ID f) override;
+        BDD_ID coFactorFalse(BDD_ID f) override;
         BDD_ID neg(BDD_ID a) override;
         BDD_ID and2(BDD_ID a, BDD_ID b) override;
         BDD_ID or2(BDD_ID a, BDD_ID b) override;
