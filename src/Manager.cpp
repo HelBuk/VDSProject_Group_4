@@ -1,3 +1,10 @@
+/**
+* @file Manager.cpp
+ * @brief Implementation of the BDD Manager class for constructing and manipulating Binary Decision Diagrams.
+ *
+ * This class provides methods to create BDD variables, perform logical operations, manage unique and computed tables,
+ * and visualize the resulting BDD graph.
+ */
 #include "Manager.h"
 
 #include <iostream>
@@ -8,6 +15,9 @@
 
 namespace ClassProject {
 
+    /**
+     * @brief Constructor initializes the unique table with constant nodes (False and True).
+     */
     Manager::Manager() : currentID(2) {
         uniqueTable[0] = {0, 0, 0, 0}; // False
         uniqueTable[1] = {1, 1, 1, 1}; // True
@@ -65,6 +75,9 @@ namespace ClassProject {
         return coFactorFalse(f, 0); // default to x = topVar(f)
     }
 
+    /**
+     * @brief Adds a unique node to the table or returns existing one.
+     */
     BDD_ID Manager::addNode(BDD_ID v, BDD_ID h, BDD_ID l) {
         for (const auto &[id, node] : uniqueTable)
             if (node.high == h && node.low == l && node.topVar == v) return id;
@@ -73,6 +86,9 @@ namespace ClassProject {
         return id;
     }
 
+    /**
+     * @brief Implements the ITE (if-then-else) operator.
+     */
     BDD_ID Manager::ite(BDD_ID f, BDD_ID g, BDD_ID h) {
         if (f == trueID) return g;
         if (f == falseID) return h;
@@ -121,7 +137,9 @@ namespace ClassProject {
     std::string Manager::getTopVarName(const BDD_ID &id) {
         return idToLabel.count(id) ? idToLabel[id] : "n" + std::to_string(id);
     }
-
+    /**
+     * @brief Outputs the BDD to a .dot graph file.
+     */
     void Manager::visualizeBDD(std::string filepath, BDD_ID &root) {
         std::ofstream out(filepath);
         out << "digraph BDD {\n";
@@ -148,6 +166,9 @@ namespace ClassProject {
         out << "}\n";
     }
 
+    /**
+     * @brief Recursively finds all nodes reachable from a root.
+     */
     void Manager::findNodes(const BDD_ID &r, std::set<BDD_ID> &n) {
         if (n.count(r)) return;
         n.insert(r);
@@ -157,6 +178,9 @@ namespace ClassProject {
         }
     }
 
+    /**
+     * @brief Finds all variable IDs used in a BDD.
+     */
     void Manager::findVars(const BDD_ID &r, std::set<BDD_ID> &v) {
         std::set<BDD_ID> n;
         findNodes(r, n);
