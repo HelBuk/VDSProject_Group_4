@@ -1,0 +1,40 @@
+name: CMake CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Doxygen and Graphviz
+      run: sudo apt update && sudo apt install -y doxygen graphviz
+
+    - name: Install dependencies
+      run: sudo apt update && sudo apt install -y cmake g++ ninja-build
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+
+    - name: Generate Doxygen documentation
+      run: doxygen Doxyfile
+
+
+

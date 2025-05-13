@@ -1,0 +1,20 @@
+
+# Doxyfile 1.9.1
+
+PROJECT_NAME           = "BDD Manager"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = src
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+FILE_PATTERNS          = *.h *.cpp
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+INLINE_SOURCES         = YES
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = src
+GENERATE_TREEVIEW      = YES
+HTML_OUTPUT            = html
