@@ -9,6 +9,7 @@
 #include "Tests.h"
 #include <fstream> // For std::ifstream and std::remove
 #include <string>
+#include <filesystem>
 
 using namespace ClassProject;
 
@@ -101,10 +102,8 @@ TEST_F(ManagerTest, FindNodesCollectsReachableNodes) {
     std::set<BDD_ID> nodes;
     mgr.findNodes(expr, nodes);
 
-    // Should include x, y, their and-node, and constants
     EXPECT_GE(nodes.size(), 4);
     EXPECT_TRUE(nodes.count(expr));
-    //EXPECT_TRUE(nodes.count(x));
     EXPECT_TRUE(nodes.count(y));
     EXPECT_TRUE(nodes.count(mgr.True()));
     EXPECT_TRUE(nodes.count(mgr.False()));
@@ -130,4 +129,52 @@ TEST_F(ManagerTest, UniqueTableSizeTracksNodeCount) {
 
     size_t newSize = mgr.uniqueTableSize();
     EXPECT_GT(newSize, initialSize);
+}
+
+TEST_F(ManagerTest, VisualizeBDDFunctionExample) { // (a+b)(c+d)
+    BDD_ID a = mgr.createVar("a");
+    BDD_ID b = mgr.createVar("b");
+    BDD_ID c = mgr.createVar("c");
+    BDD_ID d = mgr.createVar("d");
+
+    BDD_ID ab = mgr.or2(a, b);
+    BDD_ID cd = mgr.or2(c, d);
+    BDD_ID f = mgr.and2(ab, cd);
+
+    std::string filename = "f_expr.dot";
+    mgr.visualizeBDD(filename, f);
+
+    auto abs_path = std::filesystem::absolute(filename);
+    std::ifstream infile(filename); //The file exists, it was successfully opened, no I/O errors occurred
+    ASSERT_TRUE(infile.good());
+
+    std::cout << "DOT file created: " << abs_path << std::endl;
+    std::cout << "To view it, run:\n";
+    std::cout << "dot -Tpng " << abs_path << " -o f_expr.png && xdg-open f_expr.png" << std::endl;
+}
+
+TEST_F(ManagerTest, UniqueTableMatches) {
+    size_t initSize = mgr.uniqueTableSize();  // Should be 2: {False, True}
+    EXPECT_EQ(initSize, 2);
+
+    BDD_ID a = mgr.createVar("a");  // ID 2
+    BDD_ID b = mgr.createVar("b");  // ID 3
+    BDD_ID c = mgr.createVar("c");  // ID 4
+    BDD_ID d = mgr.createVar("d");  // ID 5
+    EXPECT_EQ(mgr.uniqueTableSize(), 6); // {0,1,a,b,c,d}
+
+    // a + b → ID 6
+    BDD_ID ab = mgr.or2(a, b);
+    EXPECT_GE(mgr.uniqueTableSize(), 7);
+
+    // c * d → ID 7
+    BDD_ID cd = mgr.and2(c, d);
+    EXPECT_GE(mgr.uniqueTableSize(), 8);
+
+    // (a + b) * (c * d) → ID 9
+    BDD_ID f = mgr.and2(ab, cd);
+    EXPECT_GE(mgr.uniqueTableSize(), 10);
+
+    size_t finalSize = mgr.uniqueTableSize();
+    EXPECT_EQ(finalSize, 10); // Should match the example if no sharing missed
 }

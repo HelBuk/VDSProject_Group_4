@@ -31,9 +31,7 @@ namespace ClassProject {
     bool Manager::isConstant(BDD_ID f) { return f == falseID || f == trueID; }
 
     bool Manager::isVariable(BDD_ID x) {
-        return uniqueTable.count(x) && //checking whether the key x exists in the map uniqueTable
-               uniqueTable[x].high == trueID && //Not sure what is isVarible
-               uniqueTable[x].low == falseID;
+        return variableIDs.count(x) > 0;
     }
 
     BDD_ID Manager::createVar(const std::string &label) {
@@ -41,6 +39,7 @@ namespace ClassProject {
         BDD_ID id = currentID++;
         labelToID[label] = id;
         idToLabel[id] = label;
+        variableIDs.insert(id);
         uniqueTable[id] = {id, id, falseID, trueID};
         return id;
     }

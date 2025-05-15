@@ -54,6 +54,7 @@ namespace ClassProject {
         std::map<BDD_ID, std::string> idToLabel;
         std::map<BDD_ID, Node> uniqueTable;
         std::map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID> computedTable;
+        std::set<BDD_ID> variableIDs;
 
         BDD_ID addNode(BDD_ID topVar, BDD_ID high, BDD_ID low);
     };
