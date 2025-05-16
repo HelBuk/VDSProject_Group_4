@@ -24,8 +24,8 @@ namespace ClassProject {
         bool isVariable(BDD_ID x) override;
         BDD_ID topVar(BDD_ID f) override;
         BDD_ID ite(BDD_ID f, BDD_ID g, BDD_ID h) override;
-        BDD_ID coFactorTrue(BDD_ID f, BDD_ID x = 0) override;
-        BDD_ID coFactorFalse(BDD_ID f, BDD_ID x = 0) override;
+        BDD_ID coFactorTrue(BDD_ID f, BDD_ID x) override;
+        BDD_ID coFactorFalse(BDD_ID f, BDD_ID x) override;
         BDD_ID coFactorTrue(BDD_ID f) override;
         BDD_ID coFactorFalse(BDD_ID f) override;
         BDD_ID neg(BDD_ID a) override;
