@@ -1,1 +1,5 @@
 gtest/
+# Ignore all top-level folders that start with "results_" (generated outputs)
+results_*/
+# Keep the expected results folder
+!results/results_*/

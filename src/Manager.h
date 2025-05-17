@@ -7,11 +7,22 @@
 
 #include "ManagerInterface.h"
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <tuple>
 #include <set>
 
 namespace ClassProject {
+
+    // Hash function specialization for std::tuple<BDD_ID, BDD_ID, BDD_ID>
+    struct TupleHash {
+        std::size_t operator()(const std::tuple<BDD_ID, BDD_ID, BDD_ID>& key) const {
+            size_t h1 = std::hash<BDD_ID>{}(std::get<0>(key));
+            size_t h2 = std::hash<BDD_ID>{}(std::get<1>(key));
+            size_t h3 = std::hash<BDD_ID>{}(std::get<2>(key));
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
 
     class Manager : public ManagerInterface {
     public:
@@ -53,7 +64,8 @@ namespace ClassProject {
         std::map<std::string, BDD_ID> labelToID;
         std::map<BDD_ID, std::string> idToLabel;
         std::map<BDD_ID, Node> uniqueTable;
-        std::map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID> computedTable;
+        std::unordered_map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID, TupleHash> computedTable;
+        std::unordered_map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID, TupleHash> uniqueHashTable;
         std::set<BDD_ID> variableIDs;
 
         BDD_ID addNode(BDD_ID topVar, BDD_ID high, BDD_ID low);
@@ -62,4 +74,3 @@ namespace ClassProject {
 }
 
 #endif
-

@@ -12,14 +12,18 @@
 #include <limits>
 #include <fstream>
 #include <functional>
+#include <unordered_map>  // Added for hash-based table
+
 
 namespace ClassProject {
 
-        Manager::Manager() : currentID(2) {
-        uniqueTable[0] = {0, 0, 0, 0}; // False
-        uniqueTable[1] = {1, 1, 1, 1}; // True
-        falseID = 0;
-        trueID = 1;
+    Manager::Manager():
+        currentID(2),
+        trueID(1),
+        falseID(0)
+    {
+        uniqueTable[falseID] = {falseID, falseID, falseID, falseID};
+        uniqueTable[trueID] = {trueID, trueID, trueID, trueID};
     }
 
     const BDD_ID &Manager::True() { return trueID; }
@@ -38,6 +42,7 @@ namespace ClassProject {
         idToLabel[id] = label;
         variableIDs.insert(id);
         uniqueTable[id] = {id, id, falseID, trueID};
+        uniqueHashTable[std::make_tuple(id, falseID, trueID)] = id;
         return id;
     }
 
@@ -84,10 +89,11 @@ namespace ClassProject {
     }
 
     BDD_ID Manager::addNode(BDD_ID v, BDD_ID h, BDD_ID l) {
-        for (const auto &[id, node] : uniqueTable)
-            if (node.high == h && node.low == l && node.topVar == v) return id;
+        auto key = std::make_tuple(v, l, h);
+        if (uniqueHashTable.count(key)) return uniqueHashTable[key];
         BDD_ID id = currentID++;
         uniqueTable[id] = {id, v, l, h};
+        uniqueHashTable[key] = id;
         return id;
     }
 
