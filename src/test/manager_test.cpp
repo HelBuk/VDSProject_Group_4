@@ -179,3 +179,38 @@ TEST_F(FreshManagerTest, UniqueTableMatches) {
     size_t finalSize = manager.uniqueTableSize();
     EXPECT_EQ(finalSize, 10); // 2 constants + 4 vars + 4 expressions
 }
+
+struct FreshManagerTest2 : testing::Test {
+    ClassProject::Manager manager;
+};
+
+TEST(FreshManagerTest2, InspectReachableNodes) {
+    ClassProject::Manager manager;
+
+    BDD_ID a = manager.createVar("a");
+    BDD_ID b = manager.createVar("b");
+    BDD_ID c = manager.createVar("c");
+    BDD_ID d = manager.createVar("d");
+
+    BDD_ID ab = manager.or2(a, b);
+    BDD_ID cd = manager.and2(c, d);
+    BDD_ID f = manager.and2(ab, cd);
+
+    std::set<BDD_ID> nodes;
+    manager.findNodes(f, nodes);
+
+    std::cout << "\n--- Reachable Nodes from f ---" << std::endl;
+    for (BDD_ID id : nodes) {
+        std::string label = manager.getTopVarName(id);
+        std::cout << "Node ID: " << id
+                  << " | topVar: " << manager.topVar(id)
+                  << " (" << label << ")"
+                  << " | isConst: " << manager.isConstant(id)
+                  << " | isVar: " << manager.isVariable(id)
+                  << std::endl;
+    }
+    std::cout << "Total reachable nodes: " << nodes.size() << std::endl;
+
+    // Sanity check
+    EXPECT_GE(nodes.size(), 6);  // 4 vars + 2 ops + 2 constants (some overlap)
+}
