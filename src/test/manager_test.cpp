@@ -214,3 +214,35 @@ TEST(FreshManagerTest2, InspectReachableNodes) {
     // Sanity check
     EXPECT_GE(nodes.size(), 6);  // 4 vars + 2 ops + 2 constants (some overlap)
 }
+
+
+TEST_F(ManagerTest, IteUsesComputedTableForCaching) {
+    BDD_ID a = manager->createVar("a");
+    BDD_ID b = manager->createVar("b");
+    BDD_ID ite1 = manager->ite(a, b, manager->False());
+    BDD_ID ite2 = manager->ite(a, b, manager->False());
+    EXPECT_EQ(ite1, ite2);  // Cached result should return same node
+}
+
+TEST_F(ManagerTest, AddNodeAvoidsRedundantNodes) {
+    BDD_ID a = manager->createVar("a");
+    BDD_ID hi = manager->True();
+    BDD_ID lo = manager->False();
+
+    BDD_ID node1 = manager->and2(a, manager->True());  // Should build (a, T, F)
+    BDD_ID node2 = manager->and2(a, manager->True());  // Should reuse same structure
+    EXPECT_EQ(node1, node2);
+}
+
+TEST_F(ManagerTest, CoFactorTrueAndFalsePreserveSemantics) {
+    BDD_ID a = manager->createVar("a");
+    BDD_ID b = manager->createVar("b");
+    BDD_ID expr = manager->or2(a, b);
+
+    BDD_ID coT = manager->coFactorTrue(expr, a);   // Should be b
+    BDD_ID coF = manager->coFactorFalse(expr, a);  // Should be b
+
+    EXPECT_EQ(coT, manager->True());
+    EXPECT_EQ(coF, b);
+}
+
