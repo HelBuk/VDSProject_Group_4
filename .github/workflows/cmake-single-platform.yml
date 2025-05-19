@@ -14,27 +14,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Doxygen and Graphviz
-      run: sudo apt update && sudo apt install -y doxygen graphviz
+      - name: Install Doxygen and Graphviz
+        run: sudo apt update && sudo apt install -y doxygen graphviz
 
-    - name: Install dependencies
-      run: sudo apt update && sudo apt install -y cmake g++ ninja-build
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake g++ ninja-build libboost-all-dev
 
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-    - name: Build
-      run: cmake --build build
+      - name: Build
+        run: cmake --build build
 
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
 
-    - name: Generate Doxygen documentation
-      run: doxygen Doxyfile
-
-
-
+      - name: Generate Doxygen documentation
+        run: doxygen Doxyfile
