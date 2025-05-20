@@ -6,7 +6,11 @@ add_library(Benchmark
         skip_parser.hpp)
 
 #Boost
-cmake_policy(SET CMP0167 OLD)  #suppress warning
+#cmake_policy(SET CMP0167 OLD)  #suppress warning
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 OLD)
+endif()
+
 find_package(Boost)
 
 #Executable
