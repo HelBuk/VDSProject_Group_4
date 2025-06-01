@@ -16,12 +16,9 @@
 
 
 namespace ClassProject {
-
-    Manager::Manager():
-        currentID(2),
-        trueID(1),
-        falseID(0)
-    {
+    Manager::Manager(): currentID(2),
+                        trueID(1),
+                        falseID(0) {
         uniqueTable[falseID] = {falseID, falseID, falseID, falseID};
         uniqueTable[trueID] = {trueID, trueID, trueID, trueID};
     }
@@ -56,17 +53,22 @@ namespace ClassProject {
     }
 
     BDD_ID Manager::coFactorTrue(BDD_ID f, BDD_ID x) {
-        if (isConstant(f)) return f;
+        auto key = std::make_pair(f, x);
+        if (cofactorTrueCache.count(key)) return cofactorTrueCache[key];
 
-        if (f == x && isVariable(x)) return True();
-
-        if (topVar(f) == x) {
-            return uniqueTable[f].high;
+        BDD_ID result;
+        if (isConstant(f) || topVar(f) > x) {
+            result = f;
+        } else if (topVar(f) == x) {
+            result = uniqueTable[f].high;
         } else {
             BDD_ID high = coFactorTrue(uniqueTable[f].high, x);
             BDD_ID low = coFactorTrue(uniqueTable[f].low, x);
-            return ite(topVar(f), high, low);
+            result = addNode(topVar(f), high, low);
         }
+
+        cofactorTrueCache[key] = result;
+        return result;
     }
 
     BDD_ID Manager::coFactorFalse(BDD_ID f) {
@@ -75,20 +77,27 @@ namespace ClassProject {
     }
 
     BDD_ID Manager::coFactorFalse(BDD_ID f, BDD_ID x) {
-        if (isConstant(f)) return f;
+        auto key = std::make_pair(f, x);
+        if (cofactorFalseCache.count(key)) return cofactorFalseCache[key];
 
-        if (f == x && isVariable(x)) return False();
-
-        if (topVar(f) == x) {
-            return uniqueTable[f].low;
+        BDD_ID result;
+        if (isConstant(f) || topVar(f) > x) {
+            result = f;
+        } else if (topVar(f) == x) {
+            result = uniqueTable[f].low;
         } else {
             BDD_ID high = coFactorFalse(uniqueTable[f].high, x);
             BDD_ID low = coFactorFalse(uniqueTable[f].low, x);
-            return ite(topVar(f), high, low);
+            result = addNode(topVar(f), high, low);  // Replace `ite(...)` here!
         }
+
+        cofactorFalseCache[key] = result;
+        return result;
     }
 
+
     BDD_ID Manager::addNode(BDD_ID v, BDD_ID h, BDD_ID l) {
+        if (h == l) return h;
         auto key = std::make_tuple(v, l, h);
         if (uniqueHashTable.count(key)) return uniqueHashTable[key];
         BDD_ID id = currentID++;
@@ -101,17 +110,30 @@ namespace ClassProject {
         if (f == trueID) return g;
         if (f == falseID) return h;
         if (g == h) return g;
+
         auto key = std::make_tuple(f, g, h);
-        if (computedTable.count(key)) return computedTable[key];
+        if (computedTable.count(key) > 0) {
+            return computedTable[key];
+        }
+
         BDD_ID top = std::numeric_limits<BDD_ID>::max();
         if (!isConstant(f)) top = std::min(top, topVar(f));
         if (!isConstant(g)) top = std::min(top, topVar(g));
         if (!isConstant(h)) top = std::min(top, topVar(h));
-        BDD_ID hi = ite(coFactorTrue(f, top), coFactorTrue(g, top), coFactorTrue(h, top));
-        BDD_ID lo = ite(coFactorFalse(f, top), coFactorFalse(g, top), coFactorFalse(h, top));
-        BDD_ID res = (hi == lo) ? hi : addNode(top, hi, lo);
-        computedTable[key] = res;
-        return res;
+
+        BDD_ID f1 = coFactorTrue(f, top);
+        BDD_ID g1 = coFactorTrue(g, top);
+        BDD_ID h1 = coFactorTrue(h, top);
+        BDD_ID f0 = coFactorFalse(f, top);
+        BDD_ID g0 = coFactorFalse(g, top);
+        BDD_ID h0 = coFactorFalse(h, top);
+
+        BDD_ID hi = ite(f1, g1, h1);
+        BDD_ID lo = ite(f0, g0, h0);
+
+        BDD_ID result = (hi == lo) ? hi : addNode(top, hi, lo);
+        computedTable[key] = result;
+        return result;
     }
 
     BDD_ID Manager::neg(BDD_ID a) {
@@ -185,7 +207,7 @@ namespace ClassProject {
     void Manager::findVars(const BDD_ID &r, std::set<BDD_ID> &v) {
         std::set<BDD_ID> n;
         findNodes(r, n);
-        for (auto id : n) {
+        for (auto id: n) {
             if (isConstant(id)) continue;
             BDD_ID var = topVar(id);
             if (isVariable(var)) v.insert(var);
@@ -195,5 +217,4 @@ namespace ClassProject {
     size_t Manager::uniqueTableSize() {
         return uniqueTable.size();
     }
-
 } // namespace ClassProject

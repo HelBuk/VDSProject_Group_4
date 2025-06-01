@@ -10,7 +10,8 @@
 #include <unordered_map>
 #include <string>
 #include <tuple>
-#include <set>
+#include <unordered_set>
+#include <boost/functional/hash.hpp>
 
 namespace ClassProject {
 
@@ -61,12 +62,15 @@ namespace ClassProject {
         BDD_ID currentID;
         BDD_ID trueID, falseID;
 
-        std::map<std::string, BDD_ID> labelToID;
-        std::map<BDD_ID, std::string> idToLabel;
-        std::map<BDD_ID, Node> uniqueTable;
+        std::unordered_map<std::string, BDD_ID> labelToID;
+        std::unordered_map<BDD_ID, std::string> idToLabel;
+        std::unordered_map<BDD_ID, Node> uniqueTable;
         std::unordered_map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID, TupleHash> computedTable;
         std::unordered_map<std::tuple<BDD_ID, BDD_ID, BDD_ID>, BDD_ID, TupleHash> uniqueHashTable;
-        std::set<BDD_ID> variableIDs;
+        std::unordered_set<BDD_ID> variableIDs;
+
+        std::unordered_map<std::pair<BDD_ID, BDD_ID>, BDD_ID, boost::hash<std::pair<BDD_ID, BDD_ID>>> cofactorTrueCache;
+        std::unordered_map<std::pair<BDD_ID, BDD_ID>, BDD_ID, boost::hash<std::pair<BDD_ID, BDD_ID>>> cofactorFalseCache;
 
         BDD_ID addNode(BDD_ID topVar, BDD_ID high, BDD_ID low);
     };
