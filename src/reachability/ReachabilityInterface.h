@@ -7,6 +7,7 @@
 #define VDSPROJECT_REACHABILITYINTERFACE_H
 
 #include "../Manager.h"
+#include <vector>
 
 namespace ClassProject {
     class ReachabilityInterface : public Manager {

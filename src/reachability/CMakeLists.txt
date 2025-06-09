@@ -1,4 +1,4 @@
-project(VDSProject_test CXX C)
+project(VDSProject_test_reachability CXX C)
 cmake_minimum_required(VERSION 3.10)
 
 
