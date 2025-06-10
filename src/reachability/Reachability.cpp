@@ -135,23 +135,62 @@ namespace ClassProject {
             return -1;
         }
 
-        // BFS-style level computation
         std::set<std::vector<bool>> frontier;
-        frontier.insert(std::vector<bool>(stateVars.size(), false)); // initial state
-        std::set<std::vector<bool>> visited = frontier;
+        std::set<std::vector<bool>> visited;
+
+        std::vector<bool> initState(stateVars.size(), false);
+        for (const auto &kv : distanceMap) {
+            initState = kv.first; // the one initialized via setInitState
+            break;
+        }
+
+        frontier.insert(initState);
+        visited.insert(initState);
 
         int dist = 0;
         while (!frontier.empty()) {
             std::set<std::vector<bool>> nextFrontier;
+
             for (const auto &state : frontier) {
                 if (state == stateVector) return dist;
-                // skip successor generation for brevity
+
+                // 1. Build characteristic function for current state
+                BDD_ID chi = buildCharacteristic(state, stateVars);
+
+                // 2. Apply transition relation to it
+                BDD_ID tmp = and2(chi, buildTransitionRelation());
+
+                // 3. ∃x (input vars)
+                tmp = existentialQuantify(tmp, inputVars);
+
+                // 4. ∃s (current state vars)
+                tmp = existentialQuantify(tmp, stateVars);
+
+                // 5. Enumerate all possible valuations of nextStateVars
+                size_t n = nextStateVars.size();
+                for (size_t b = 0; b < (1 << n); ++b) {
+                    std::vector<bool> next(n);
+                    for (size_t i = 0; i < n; ++i) {
+                        next[i] = (b >> i) & 1;
+                    }
+
+                    BDD_ID chi_next = buildCharacteristic(next, nextStateVars);
+                    if (and2(tmp, chi_next) != False()) {
+                        if (visited.find(next) == visited.end()) {
+                            nextFrontier.insert(next);
+                            visited.insert(next);
+                            distanceMap[next] = dist + 1;
+                        }
+                    }
+                }
             }
+
             frontier = nextFrontier;
             dist++;
         }
 
         return -1;
     }
+
 
 }

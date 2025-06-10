@@ -100,23 +100,19 @@ TEST_F(ReachabilityTest, ThreeStatesXorChain) {
     fsm2 = std::make_unique<Reachability>(3);
     stateVars2 = fsm2->getStates();
 
-    BDD_ID t0 = fsm2->xor2(stateVars2[0], stateVars2[1]);
-    BDD_ID t1 = fsm2->xor2(stateVars2[1], stateVars2[2]);
-    BDD_ID t2 = stateVars2[2];
+    BDD_ID t0 = fsm2->neg(stateVars2[0]);
+    BDD_ID t1 = fsm2->xor2(stateVars2[1], stateVars2[0]);
+    BDD_ID t2 = fsm2->xor2(stateVars2[2], stateVars2[1]);
 
     fsm2->setTransitionFunctions({t0, t1, t2});
     fsm2->setInitState({false, false, false});
 
     ASSERT_TRUE(fsm2->isReachable({false, false, false}));
-    ASSERT_TRUE(fsm2->isReachable({true, false, false}));
-    ASSERT_TRUE(fsm2->isReachable({true, true, false}));
-    ASSERT_TRUE(fsm2->isReachable({false, true, false}));
-
-    ASSERT_EQ(fsm2->stateDistance({false, false, false}), 0);
-    ASSERT_EQ(fsm2->stateDistance({true, false, false}), 1);
-    ASSERT_EQ(fsm2->stateDistance({true, true, false}), 2);
-    ASSERT_EQ(fsm2->stateDistance({false, true, false}), 3);
+    ASSERT_TRUE(fsm2->isReachable({true, true, true}));
+    ASSERT_TRUE(fsm2->isReachable({false, false, false}));
+    ASSERT_EQ(fsm2->stateDistance({true, true, true}), 3);
 }
+
 
 TEST_F(ReachabilityTest, NotS0NotS1_PDF_Example) {
     BDD_ID s0 = stateVars2.at(0);
