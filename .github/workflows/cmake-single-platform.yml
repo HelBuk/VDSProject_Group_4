@@ -1,4 +1,4 @@
-name: CMake CI
+name: CMake CI with Coverage
 
 on:
   push:
@@ -16,36 +16,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Doxygen and Graphviz
-        run: sudo apt update && sudo apt install -y doxygen graphviz
-
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake g++ ninja-build libboost-all-dev lcov
+          sudo apt install -y cmake g++ ninja-build lcov doxygen graphviz
 
-      - name: Configure CMake (with coverage)
+      - name: Configure CMake with coverage enabled
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCODE_COVERAGE=ON
 
-      - name: Build
+      - name: Build project
         run: cmake --build build
 
-      - name: Run tests manually
+      - name: Run tests manually to generate .gcda files
         run: |
           cd build
-          # Run test binaries directly to ensure .gcda files are generated
-          ./src/reachability/VDSProject_reachability || true
-          ./src/test/VDSProject_test || true
+          find . -type f -executable -name 'VDSProject_*' -exec {} \; || true
 
-      - name: Generate coverage report
+      - name: Generate coverage report (same as CLion command)
         run: |
           cd build
-          lcov --capture --directory . --output-file coverage.info --rc geninfo_unexecuted_blocks=1 --ignore-errors empty
+          lcov --rc geninfo_unexecuted_blocks=1 --capture --directory . --output-file coverage.info --ignore-errors mismatch
           lcov --remove coverage.info '/usr/*' '*/gtest/*' --output-file coverage.info.cleaned --ignore-errors unused
-          genhtml coverage.info.cleaned --output-directory coverage-report --ignore-errors mismatch
+          genhtml coverage.info.cleaned --ignore-errors mismatch --quiet --output-directory coverage-report
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: build/coverage-report/
+          path: build/coverage-report
