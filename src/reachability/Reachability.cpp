@@ -5,7 +5,11 @@ namespace ClassProject {
     Reachability::Reachability(unsigned int stateSize, unsigned int inputSize)
     : ReachabilityInterface(stateSize, inputSize)
     {
-        // Your original body remains unchanged
+        if (stateSize == 0) {
+            throw std::runtime_error("stateSize must be greater than zero.");
+        }
+
+        // Create state and input variables
         for (unsigned int i = 0; i < stateSize; ++i) {
             stateVars.push_back(createVar("s" + std::to_string(i)));
             nextStateVars.push_back(createVar("s'" + std::to_string(i)));
@@ -13,19 +17,27 @@ namespace ClassProject {
         for (unsigned int i = 0; i < inputSize; ++i) {
             inputVars.push_back(createVar("i" + std::to_string(i)));
         }
-        transitions.resize(stateSize);
+
+        // Default transition: identity for each state bit
+        transitions.reserve(stateSize);
+        for (unsigned int i = 0; i < stateSize; ++i) {
+            transitions.push_back(stateVars[i]);
+        }
+
+        // Default initial state: all false
+        std::vector<bool> init(stateSize, false);
+        setInitState(init);
     }
 
-
-    const std::vector<BDD_ID> &Reachability::getStates() const {
+    const std::vector<BDD_ID>& Reachability::getStates() const {
         return stateVars;
     }
 
-    const std::vector<BDD_ID> &Reachability::getInputs() const {
+    const std::vector<BDD_ID>& Reachability::getInputs() const {
         return inputVars;
     }
 
-    void Reachability::setTransitionFunctions(const std::vector<BDD_ID> &transitionFunctions) {
+    void Reachability::setTransitionFunctions(const std::vector<BDD_ID>& transitionFunctions) {
         if (transitionFunctions.size() != stateVars.size()) {
             throw std::runtime_error("Transition function size mismatch.");
         }
@@ -33,7 +45,7 @@ namespace ClassProject {
         reachableComputed = false;
     }
 
-    void Reachability::setInitState(const std::vector<bool> &stateVector) {
+    void Reachability::setInitState(const std::vector<bool>& stateVector) {
         if (stateVector.size() != stateVars.size()) {
             throw std::runtime_error("Init state size mismatch.");
         }
@@ -44,7 +56,7 @@ namespace ClassProject {
         reachableComputed = false;
     }
 
-    BDD_ID Reachability::buildCharacteristic(const std::vector<bool> &values, const std::vector<BDD_ID> &vars) {
+    BDD_ID Reachability::buildCharacteristic(const std::vector<bool>& values, const std::vector<BDD_ID>& vars) {
         BDD_ID result = True();
         for (size_t i = 0; i < vars.size(); ++i) {
             BDD_ID term = values[i] ? vars[i] : neg(vars[i]);
@@ -53,7 +65,7 @@ namespace ClassProject {
         return result;
     }
 
-    BDD_ID Reachability::existentialQuantify(BDD_ID f, const std::vector<BDD_ID> &vars) {
+    BDD_ID Reachability::existentialQuantify(BDD_ID f, const std::vector<BDD_ID>& vars) {
         for (BDD_ID v : vars) {
             f = or2(coFactorTrue(f, v), coFactorFalse(f, v));
         }
@@ -63,14 +75,13 @@ namespace ClassProject {
     BDD_ID Reachability::buildTransitionRelation() {
         BDD_ID result = True();
         for (size_t i = 0; i < transitions.size(); ++i) {
-            BDD_ID δ = transitions[i];
+            BDD_ID delta = transitions[i];
             BDD_ID s_p = nextStateVars[i];
 
             BDD_ID term = or2(
-                and2(s_p, δ),
-                and2(neg(s_p), neg(δ))
+                and2(s_p, delta),
+                and2(neg(s_p), neg(delta))
             );
-
             result = and2(result, term);
         }
         return result;
@@ -79,43 +90,34 @@ namespace ClassProject {
     void Reachability::computeReachableSet() {
         if (reachableComputed) return;
 
-        BDD_ID τ = buildTransitionRelation();
-        BDD_ID cR = reachableSet;
+        BDD_ID tau = buildTransitionRelation();
+        BDD_ID cR = reachableSet; //charachteristic function
 
-        bool fixpoint = false;
-        int dist = 0;
+        while (true) {
+            BDD_ID tmp = and2(cR, tau);
+            tmp = existentialQuantify(tmp, inputVars);   // ∃x
+            tmp = existentialQuantify(tmp, stateVars);   // ∃s
 
-        while (!fixpoint) {
-            BDD_ID tmp = and2(cR, τ);
-
-            tmp = existentialQuantify(tmp, inputVars);  // ∃x
-            tmp = existentialQuantify(tmp, stateVars);  // ∃s
-
-            // relabel s' to s
+            // Relabel s' to s
             BDD_ID relabeled = True();
             for (size_t i = 0; i < stateVars.size(); ++i) {
-                BDD_ID eq = xnor2(stateVars[i], nextStateVars[i]);
-                relabeled = and2(relabeled, eq);
+                relabeled = and2(relabeled, xnor2(stateVars[i], nextStateVars[i])); // s_i = s'_i survive
             }
 
             BDD_ID img = and2(tmp, relabeled);
-            img = existentialQuantify(img, nextStateVars);
+            img = existentialQuantify(img, nextStateVars); // ∃s' - If s′ ≠ s, it’s removed
 
             BDD_ID cR_next = or2(cR, img);
-
-            if (cR_next == cR) {
-                fixpoint = true;
-            }
+            if (cR_next == cR) break;
 
             cR = cR_next;
-            dist++;
         }
 
         reachableSet = cR;
         reachableComputed = true;
     }
 
-    bool Reachability::isReachable(const std::vector<bool> &stateVector) {
+    bool Reachability::isReachable(const std::vector<bool>& stateVector) {
         if (stateVector.size() != stateVars.size()) {
             throw std::runtime_error("State vector size mismatch.");
         }
@@ -125,48 +127,39 @@ namespace ClassProject {
         return and2(test, reachableSet) != False();
     }
 
-    int Reachability::stateDistance(const std::vector<bool> &stateVector) {
+    int Reachability::stateDistance(const std::vector<bool>& stateVector) {
         if (stateVector.size() != stateVars.size()) {
             throw std::runtime_error("State vector size mismatch.");
         }
 
         computeReachableSet();
-        if (!isReachable(stateVector)) {
-            return -1;
-        }
+        if (!isReachable(stateVector)) return -1;
 
         std::set<std::vector<bool>> frontier;
         std::set<std::vector<bool>> visited;
 
         std::vector<bool> initState(stateVars.size(), false);
-        for (const auto &kv : distanceMap) {
-            initState = kv.first; // the one initialized via setInitState
+        for (const auto& kv : distanceMap) {
+            initState = kv.first;
             break;
         }
 
         frontier.insert(initState);
         visited.insert(initState);
-
         int dist = 0;
+
         while (!frontier.empty()) {
             std::set<std::vector<bool>> nextFrontier;
 
-            for (const auto &state : frontier) {
+            for (const auto& state : frontier) {
                 if (state == stateVector) return dist;
 
-                // 1. Build characteristic function for current state
                 BDD_ID chi = buildCharacteristic(state, stateVars);
-
-                // 2. Apply transition relation to it
                 BDD_ID tmp = and2(chi, buildTransitionRelation());
 
-                // 3. ∃x (input vars)
                 tmp = existentialQuantify(tmp, inputVars);
-
-                // 4. ∃s (current state vars)
                 tmp = existentialQuantify(tmp, stateVars);
 
-                // 5. Enumerate all possible valuations of nextStateVars
                 size_t n = nextStateVars.size();
                 for (size_t b = 0; b < (1 << n); ++b) {
                     std::vector<bool> next(n);
@@ -176,9 +169,8 @@ namespace ClassProject {
 
                     BDD_ID chi_next = buildCharacteristic(next, nextStateVars);
                     if (and2(tmp, chi_next) != False()) {
-                        if (visited.find(next) == visited.end()) {
+                        if (visited.insert(next).second) {
                             nextFrontier.insert(next);
-                            visited.insert(next);
                             distanceMap[next] = dist + 1;
                         }
                     }
@@ -191,6 +183,5 @@ namespace ClassProject {
 
         return -1;
     }
-
 
 }

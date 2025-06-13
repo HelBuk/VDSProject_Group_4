@@ -131,4 +131,26 @@ TEST_F(ReachabilityTest, NotS0NotS1_PDF_Example) {
     ASSERT_EQ(fsm2->stateDistance({true, true}), 1);
 }
 
+TEST_F(ReachabilityTest, InvalidStateVectorSize) {
+    fsm2->setTransitionFunctions({fsm2->neg(stateVars2[0]), fsm2->neg(stateVars2[1])});
+    fsm2->setInitState({false, false});
+
+    EXPECT_THROW(fsm2->isReachable({true}), std::runtime_error);
+    EXPECT_THROW(fsm2->stateDistance({true}), std::runtime_error);
+    EXPECT_THROW(fsm2->setInitState({true}), std::runtime_error);
+}
+
+TEST_F(ReachabilityTest, NoTransitionsSetThrows) {
+    fsm2->setInitState({false, false});
+    EXPECT_NO_THROW(fsm2->isReachable({false, false}));
+    EXPECT_NO_THROW(fsm2->stateDistance({false, false}));
+}
+
+TEST_F(ReachabilityTest, ThrowsOnZeroStateSize) {
+    EXPECT_THROW({
+        Reachability fsm(0, 1);
+    }, std::runtime_error);
+}
+
+
 #endif

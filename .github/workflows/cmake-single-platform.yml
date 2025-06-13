@@ -22,10 +22,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake g++ ninja-build libboost-all-dev
+          sudo apt install -y cmake g++ ninja-build libboost-all-dev lcov
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Configure CMake (with coverage)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCODE_COVERAGE=ON
 
       - name: Build
         run: cmake --build build
@@ -35,5 +35,23 @@ jobs:
           cd build
           ctest --output-on-failure
 
-      - name: Generate Doxygen documentation
-        run: doxygen Doxyfile
+      - name: Generate coverage report
+        if: success()
+        run: |
+          cd build
+          # Capture all coverage data
+          lcov --capture --directory . --output-file coverage.info
+
+          # Remove unwanted files (like system headers and gtest)
+          lcov --remove coverage.info '/usr/*' '*/gtest/*' --output-file coverage.info.cleaned
+
+          # Generate HTML report
+          genhtml coverage.info.cleaned --output-directory coverage-report
+      
+
+      - name: Upload coverage report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage-report/

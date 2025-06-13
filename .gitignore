@@ -3,3 +3,7 @@ gtest/
 results_*/
 # Keep the expected results folder
 !results/results_*/
+# Ignore lcov coverage output
+coverage-report/
+coverage.info
+coverage.info.cleaned

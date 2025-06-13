@@ -1,6 +1,22 @@
 cmake_minimum_required(VERSION 3.10)
 project(VDSProject CXX C)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 ${LLVM_CXX_FLAGS} ")
+
+option(CODE_COVERAGE "Enable coverage reporting" OFF)
+
+if(CODE_COVERAGE)
+    message(STATUS "Building with code coverage enabled")
+    set(CMAKE_CXX_FLAGS "--coverage -O0 -g -fPIC -std=c++17")
+    set(CMAKE_EXE_LINKER_FLAGS "--coverage")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 ${LLVM_CXX_FLAGS}")
+endif()
+
+function(enable_coverage target)
+    if(CODE_COVERAGE)
+        target_compile_options(${target} PRIVATE --coverage -O0 -g)
+        target_link_options(${target} PRIVATE --coverage)
+    endif()
+endfunction()
 
 
 # Download and unpack googletest at configure time
