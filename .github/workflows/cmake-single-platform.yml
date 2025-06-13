@@ -1,4 +1,4 @@
-name: CMake CI with Coverage
+name: CMake CI
 
 on:
   push:
@@ -16,31 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Doxygen and Graphviz
+        run: sudo apt update && sudo apt install -y doxygen graphviz
+
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake g++ ninja-build lcov doxygen graphviz
+          sudo apt install -y cmake g++ ninja-build libboost-all-dev
 
-      - name: Configure CMake with coverage enabled
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCODE_COVERAGE=ON
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-      - name: Build project
+      - name: Build
         run: cmake --build build
 
-      - name: Run tests manually to generate .gcda files
+      - name: Run tests
         run: |
           cd build
-          find . -type f -executable -name 'VDSProject_*' -exec {} \; || true
+          ctest --output-on-failure
 
-      - name: Generate coverage report (same as CLion command)
-        run: |
-          cd build
-          lcov --rc geninfo_unexecuted_blocks=1 --capture --directory . --output-file coverage.info --ignore-errors mismatch
-          lcov --remove coverage.info '/usr/*' '*/gtest/*' --output-file coverage.info.cleaned --ignore-errors unused
-          genhtml coverage.info.cleaned --ignore-errors mismatch --quiet --output-directory coverage-report
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: build/coverage-report
+      - name: Generate Doxygen documentation
+        run: doxygen Doxyfile
