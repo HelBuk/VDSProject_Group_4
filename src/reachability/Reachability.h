@@ -35,7 +35,6 @@ namespace ClassProject {
         BDD_ID buildCharacteristic(const std::vector<bool> &assignments, const std::vector<BDD_ID> &vars);
         BDD_ID existentialQuantify(BDD_ID f, const std::vector<BDD_ID> &vars);
         void computeReachableSet();
-        void clearCache();
     };
 
 }

@@ -109,10 +109,10 @@ namespace ClassProject {
             tmp = existentialQuantify(tmp, stateVars);   // ∃s
 
             for (size_t i = 0; i < stateVars.size(); ++i) {
-                tmp = and2(tmp, xnor2(stateVars[i], nextStateVars[i])); //s' → s
+                tmp = and2(tmp, xnor2(stateVars[i], nextStateVars[i])); // s_i = s'_i survive
             }
 
-            BDD_ID img = existentialQuantify(tmp, nextStateVars); // ∃s'
+            BDD_ID img = existentialQuantify(tmp, nextStateVars); // ∃s' - If s′ ≠ s, it’s removed
 
             state_space.push_back(img);
             charReachable = or2(reachableSet, img);
