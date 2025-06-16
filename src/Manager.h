@@ -54,6 +54,10 @@ namespace ClassProject {
         size_t uniqueTableSize() override;
         void visualizeBDD(std::string filepath, BDD_ID &root) override;
 
+        BDD_ID lastValidID() const {
+            return uniqueTable.size() - 1;
+        }
+
     private:
         struct Node {
             BDD_ID id, topVar, low, high;
