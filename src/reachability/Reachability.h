@@ -2,6 +2,8 @@
 #define VDSPROJECT_REACHABILITY_H
 
 #include "ReachabilityInterface.h"
+#include <vector>
+#include <map>
 
 namespace ClassProject {
 
@@ -21,16 +23,21 @@ namespace ClassProject {
         std::vector<BDD_ID> nextStateVars;
         std::vector<BDD_ID> transitions;
         BDD_ID reachableSet;
+        BDD_ID transitionRelation;
+        BDD_ID initStateBDD;
 
-        bool reachableComputed = false;
+        std::vector<BDD_ID> state_space;
+        std::vector<BDD_ID> reachableStatesPerStep;
         std::map<std::vector<bool>, int> distanceMap;
 
+        bool reachableComputed = false;
         BDD_ID buildTransitionRelation();
         BDD_ID buildCharacteristic(const std::vector<bool> &assignments, const std::vector<BDD_ID> &vars);
         BDD_ID existentialQuantify(BDD_ID f, const std::vector<BDD_ID> &vars);
         void computeReachableSet();
+        void clearCache();
     };
 
 }
 
-#endif
+#endif // VDSPROJECT_REACHABILITY_H
