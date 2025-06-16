@@ -98,29 +98,30 @@ namespace ClassProject {
     void Reachability::computeReachableSet() {
         if (reachableComputed) return;
 
-        BDD_ID tau = buildTransitionRelation();
-        BDD_ID currentReachable = reachableSet;
+        BDD_ID tau = buildTransitionRelation();          // transition relation
+        BDD_ID charReachable = reachableSet;             // characteristic function
 
         do {
-            reachableSet = currentReachable;
+            reachableSet = charReachable;
 
-            BDD_ID tmp = and2(currentReachable, tau);
-            tmp = existentialQuantify(tmp, inputVars);
-            tmp = existentialQuantify(tmp, stateVars);
+            BDD_ID tmp = and2(charReachable, tau);
+            tmp = existentialQuantify(tmp, inputVars);   // ∃x
+            tmp = existentialQuantify(tmp, stateVars);   // ∃s
 
             for (size_t i = 0; i < stateVars.size(); ++i) {
-                tmp = and2(tmp, xnor2(stateVars[i], nextStateVars[i]));
+                tmp = and2(tmp, xnor2(stateVars[i], nextStateVars[i])); //s' → s
             }
 
-            tmp = existentialQuantify(tmp, nextStateVars);
-            state_space.push_back(tmp);
+            BDD_ID img = existentialQuantify(tmp, nextStateVars); // ∃s'
 
-            currentReachable = or2(reachableSet, tmp);
-        } while (currentReachable != reachableSet);
+            state_space.push_back(img);
+            charReachable = or2(reachableSet, img);
+        } while (charReachable != reachableSet);
 
-        reachableSet = currentReachable;
+        reachableSet = charReachable;
         reachableComputed = true;
     }
+
 
     bool Reachability::isReachable(const std::vector<bool>& stateVector) {
         if (stateVector.size() != stateVars.size()) {
